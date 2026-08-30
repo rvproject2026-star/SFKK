@@ -210,12 +210,11 @@
     // 2. Inisialisasi Peta Leaflet (Versi Dark Tile CartoDB)
     const map = L.map('map').setView([currentLat, currentLng], 13);
 
-    // Menggunakan Layer Peta Tema Gelap (CartoDB Dark Matter)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap © CARTO',
-      subdomains: 'abcd',
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map);
+
 
     let marker = L.marker([currentLat, currentLng]).addTo(map)
       .bindPopup('Posisi Target')
