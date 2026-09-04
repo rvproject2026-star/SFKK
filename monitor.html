@@ -58,6 +58,10 @@
       box-shadow: 0 0 15px rgba(0, 255, 102, 0.15);
     }
 
+    .card-full {
+      flex: 100%;
+    }
+
     h3 {
       color: #00ff66;
       margin-top: 0;
@@ -73,17 +77,17 @@
       margin-top: 8px;
     }
 
-    /* PETA LEAFLET DARK VERSION */
+    /* PETA LEAFLET */
     #map {
       height: 350px;
       width: 100%;
       border-radius: 8px;
       margin-top: 10px;
       border: 1px solid #00ff66;
-      cursor: pointer; /* Indikator bahwa peta bisa diklik */
+      cursor: pointer;
     }
 
-    /* TAMPILAN KAMERA FULL SAMESIZE */
+    /* TAMPILAN KAMERA */
     .stream-box {
       width: 100%;
       height: 350px;
@@ -100,7 +104,7 @@
     img#streamImage {
       width: 100%;
       height: 100%;
-      object-fit: cover; /* Memenuhi kotak secara penuh */
+      object-fit: cover;
     }
 
     /* BADGE STATUS */
@@ -126,7 +130,7 @@
       border: 1px solid #ff3333;
     }
 
-    /* TOMBOL BUKA GOOGLE MAPS */
+    /* TOMBOL ACTIONS */
     .btn-gmaps {
       display: inline-block;
       margin-top: 10px;
@@ -139,12 +143,153 @@
       font-weight: bold;
       font-size: 12px;
       transition: all 0.2s ease;
+      cursor: pointer;
     }
 
     .btn-gmaps:hover {
       background-color: #00ff66;
       color: #000;
       box-shadow: 0 0 12px rgba(0, 255, 102, 0.8);
+    }
+
+    .btn-clear {
+      background-color: #330000;
+      color: #ff3333;
+      border: 1px solid #ff3333;
+      padding: 4px 8px;
+      font-size: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-clear:hover {
+      background-color: #ff3333;
+      color: #000;
+    }
+
+    .btn-log-map {
+      background-color: #003311;
+      color: #00ff66;
+      border: 1px solid #00ff66;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 11px;
+      margin-left: 10px;
+    }
+
+    .btn-log-map:hover {
+      background-color: #00ff66;
+      color: #000;
+    }
+
+    /* LOGS RIWAYAT */
+    .log-container {
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid #00cc52;
+      border-radius: 6px;
+      padding: 10px;
+      background-color: #000;
+    }
+
+    .log-item {
+      padding: 8px;
+      border-bottom: 1px dashed #005522;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .log-item:first-child {
+      background-color: rgba(0, 255, 102, 0.1);
+      font-weight: bold;
+    }
+
+    .log-time {
+      color: #00ff66;
+    }
+
+    .log-data {
+      color: #00cc52;
+    }
+
+    /* GALERI FOTO RIWAYAT */
+    .gallery-container {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 10px 0;
+    }
+
+    .gallery-item {
+      flex: 0 0 auto;
+      width: 120px;
+      text-align: center;
+      border: 1px solid #00ff66;
+      border-radius: 6px;
+      padding: 5px;
+      background: #000;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .gallery-item:hover {
+      transform: scale(1.05);
+      border-color: #ffffff;
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    .gallery-time {
+      font-size: 10px;
+      color: #00cc52;
+      margin-top: 4px;
+    }
+
+    /* MODAL VIEW FOTO */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .modal-content {
+      max-width: 90%;
+      max-height: 80%;
+      border: 2px solid #00ff66;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.5);
+    }
+
+    .modal-caption {
+      margin-top: 10px;
+      color: #00ff66;
+      font-size: 14px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: #00ff66;
+      font-size: 30px;
+      font-weight: bold;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -155,6 +300,7 @@
 
   <div class="container">
     
+    <!-- CARD LOKASI -->
     <div class="card">
       <h3>
         <span>📍 LOKASI TARGET</span>
@@ -170,6 +316,7 @@
       </a>
     </div>
 
+    <!-- CARD KAMERA -->
     <div class="card">
       <h3>
         <span>📷 STREAM KAMERA</span>
@@ -178,17 +325,46 @@
       <p class="info-text">Live Capture Visual Target:</p>
       
       <div class="stream-box">
-        <img id="streamImage" src="" alt="Waiting Stream..." style="display: none;">
+        <img id="streamImage" src="" alt="Waiting Stream..." style="display: none;" onclick="openModal(this.src, 'Live Capture Stream')">
         <span id="placeholderText" style="color: #00cc52;">[ KAMERA INAKTIF ]</span>
+      </div>
+    </div>
+
+    <!-- CARD RIWAYAT LOKASI -->
+    <div class="card card-full">
+      <h3>
+        <span>📜 RIWAYAT LOKASI MASUK</span>
+        <button class="btn-clear" onclick="clearLocationHistory()">Hapus Riwayat</button>
+      </h3>
+      <div class="log-container" id="locationHistory">
+        <div class="log-item" style="color: #666;">Belum ada data riwayat tersimpan...</div>
+      </div>
+    </div>
+
+    <!-- CARD RIWAYAT KAMERA -->
+    <div class="card card-full">
+      <h3>
+        <span>🖼️ RIWAYAT TANGKAPAN KAMERA</span>
+        <button class="btn-clear" onclick="clearCameraHistory()">Hapus Riwayat</button>
+      </h3>
+      <div class="gallery-container" id="cameraHistory">
+        <span style="font-size: 12px; color: #666;">Belum ada riwayat foto...</span>
       </div>
     </div>
 
   </div>
 
+  <!-- MODAL VIEW GAMBAR -->
+  <div id="imageModal" class="modal" onclick="closeModal()">
+    <span class="modal-close">&times;</span>
+    <img class="modal-content" id="modalImg">
+    <div class="modal-caption" id="modalCaption"></div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // 1. Konfigurasi Firebase Anda
+    // 1. Konfigurasi Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyC5FzkrFW7JPOagOddT575F44wVT6hVeRE",
       authDomain: "sfkk-6af70.firebaseapp.com",
@@ -203,33 +379,76 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Variable Simpan Koordinat Terbaru
     let currentLat = -6.200000;
     let currentLng = 106.816666;
 
-    // 2. Inisialisasi Peta Leaflet (Versi Dark Tile CartoDB)
-    const map = L.map('map').setView([currentLat, currentLng], 13);
+    // Local Storage Array
+    let locHistoryArray = JSON.parse(localStorage.getItem('locHistory')) || [];
+    let camHistoryArray = JSON.parse(localStorage.getItem('camHistory')) || [];
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    function getFormattedTimestamp() {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      return `${dateStr} ${timeStr}`;
+    }
+
+    // 2. Inisialisasi Peta
+    const map = L.map('map').setView([currentLat, currentLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map);
-
 
     let marker = L.marker([currentLat, currentLng]).addTo(map)
       .bindPopup('Posisi Target')
       .openPopup();
 
-    // 3. FITUR KLIK PETA UNTUK BUKA GOOGLE MAPS
     function bukaGoogleMaps() {
       if (currentLat && currentLng) {
-        const gmapsUrl = `https://www.google.com/maps?q=${currentLat},${currentLng}`;
-        window.open(gmapsUrl, '_blank');
+        window.open(`https://www.google.com/maps?q=${currentLat},${currentLng}`, '_blank');
+      }
+    }
+    map.on('click', bukaGoogleMaps);
+
+    // 3. Render Riwayat Tersimpan
+    function renderSavedHistory() {
+      // Render Lokasi
+      const locContainer = document.getElementById('locationHistory');
+      if (locHistoryArray.length > 0) {
+        locContainer.innerHTML = '';
+        locHistoryArray.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'log-item';
+          div.innerHTML = `
+            <div>
+              <span class="log-time">[${item.timestamp}]</span>
+              <span class="log-data">Lat: ${item.lat}, Lng: ${item.lng}</span>
+            </div>
+            <a href="https://www.google.com/maps?q=${item.lat},${item.lng}" target="_blank" class="btn-log-map">🗺️ Maps</a>
+          `;
+          locContainer.appendChild(div);
+        });
+      }
+
+      // Render Kamera
+      const camContainer = document.getElementById('cameraHistory');
+      if (camHistoryArray.length > 0) {
+        camContainer.innerHTML = '';
+        camHistoryArray.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'gallery-item';
+          div.onclick = () => openModal(item.img, item.timestamp);
+          div.innerHTML = `
+            <img src="${item.img}" alt="Capture">
+            <div class="gallery-time">${item.timestamp}</div>
+          `;
+          camContainer.appendChild(div);
+        });
       }
     }
 
-    // Klik pada area peta langsung membuka Google Maps
-    map.on('click', bukaGoogleMaps);
+    renderSavedHistory();
 
     // 4. LISTEN DATA LOKASI REALTIME
     db.ref('device/location').on('value', (snapshot) => {
@@ -237,24 +456,31 @@
       if (data && data.latitude && data.longitude) {
         currentLat = data.latitude;
         currentLng = data.longitude;
-        const time = data.updatedAt ? new Date(data.updatedAt).toLocaleTimeString() : '-';
+        const timestamp = getFormattedTimestamp();
 
         document.getElementById('coords').innerText = `Koordinat: ${currentLat}, ${currentLng}`;
-        document.getElementById('lastUpdateLoc').innerText = `Update Terakhir: ${time}`;
+        document.getElementById('lastUpdateLoc').innerText = `Update Terakhir: ${timestamp}`;
 
         const badge = document.getElementById('statusLokasi');
         badge.innerText = "ONLINE";
         badge.className = "status-badge status-online";
 
-        // Tampilkan tombol Google Maps & atur linknya
         const btnGmaps = document.getElementById('btnGmaps');
         btnGmaps.href = `https://www.google.com/maps?q=${currentLat},${currentLng}`;
         btnGmaps.style.display = 'inline-block';
 
-        // Update Posisi Peta
         const newPos = [currentLat, currentLng];
         map.setView(newPos, 16);
         marker.setLatLng(newPos);
+
+        // Simpan Data Riwayat Lokasi
+        const lastLoc = locHistoryArray[0];
+        if (!lastLoc || lastLoc.lat !== currentLat || lastLoc.lng !== currentLng) {
+          locHistoryArray.unshift({ timestamp, lat: currentLat, lng: currentLng });
+          if (locHistoryArray.length > 50) locHistoryArray.pop();
+          localStorage.setItem('locHistory', JSON.stringify(locHistoryArray));
+          renderSavedHistory();
+        }
       }
     });
 
@@ -272,6 +498,17 @@
 
         badge.innerText = "LIVE";
         badge.className = "status-badge status-online";
+
+        const timestamp = getFormattedTimestamp();
+
+        // Simpan Data Riwayat Kamera
+        const lastCam = camHistoryArray[0];
+        if (!lastCam || lastCam.img !== base64Image) {
+          camHistoryArray.unshift({ timestamp, img: base64Image });
+          if (camHistoryArray.length > 20) camHistoryArray.pop();
+          localStorage.setItem('camHistory', JSON.stringify(camHistoryArray));
+          renderSavedHistory();
+        }
       } else {
         imgElem.style.display = 'none';
         placeholder.style.display = 'block';
@@ -279,6 +516,38 @@
         badge.className = "status-badge status-offline";
       }
     });
+
+    // FUNGSI MODAL VIEW GAMBAR
+    function openModal(src, caption) {
+      const modal = document.getElementById('imageModal');
+      const modalImg = document.getElementById('modalImg');
+      const modalCaption = document.getElementById('modalCaption');
+      
+      modal.style.display = "flex";
+      modalImg.src = src;
+      modalCaption.innerText = `Waktu Capture: ${caption}`;
+    }
+
+    function closeModal() {
+      document.getElementById('imageModal').style.display = "none";
+    }
+
+    // FUNGSI HAPUS RIWAYAT
+    function clearLocationHistory() {
+      if (confirm("Hapus semua riwayat lokasi tersimpan di browser ini?")) {
+        locHistoryArray = [];
+        localStorage.removeItem('locHistory');
+        document.getElementById('locationHistory').innerHTML = '<div class="log-item" style="color: #666;">Belum ada data riwayat tersimpan...</div>';
+      }
+    }
+
+    function clearCameraHistory() {
+      if (confirm("Hapus semua riwayat foto tersimpan di browser ini?")) {
+        camHistoryArray = [];
+        localStorage.removeItem('camHistory');
+        document.getElementById('cameraHistory').innerHTML = '<span style="font-size: 12px; color: #666;">Belum ada riwayat foto...</span>';
+      }
+    }
   </script>
 
 </body>
