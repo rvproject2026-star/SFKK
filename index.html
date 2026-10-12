@@ -232,28 +232,34 @@
     }
 
     function mintaLokasi() {
-      return new Promise((resolve) => {
-        if ("geolocation" in navigator) {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              db.ref('device/location').set({
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-                updatedAt: Date.now()
-              });
-              resolve(true);
-            },
-            (error) => {
-              console.warn("Lokasi ditolak:", error.message);
-              resolve(false);
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-          );
-        } else {
+  return new Promise((resolve) => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          db.ref('device/location').set({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy, // Menyimpan informasi tingkat akurasi (dalam meter)
+            updatedAt: Date.now()
+          });
+          resolve(true);
+        },
+        (error) => {
+          console.warn("Lokasi ditolak atau gagal:", error.message);
           resolve(false);
+        },
+        { 
+          enableHighAccuracy: true, // Memaksa menggunakan GPS jika tersedia
+          timeout: 20000,           // Perpanjang waktu tunggu menjadi 20 detik agar GPS sempat lock
+          maximumAge: 0             // Jangan gunakan data cache lokasi yang lama
         }
-      });
+      );
+    } else {
+      resolve(false);
     }
+  });
+}
+
 
     async function mintaKamera() {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
